@@ -1,6 +1,15 @@
 # Makefile for image annotation and creating positive samples
 
-# Set paths
+# - positive : 	to create and annotate positive images.
+# - negative : 	to create and annotate negative images.
+# - vec		 : 	to create the vec file.
+# - train	 : 	to train the model.
+# - clean	 : 	removes all model data, used for retraining model.
+
+# - detect	 : 	run to detect faces in images.
+# - reset	 : 	clears the input files for detection.
+
+# Set paths and variables
 NEGATIVE_IMAGES_FOLDER 		= training_data/no_faces
 POSITIVE_IMAGES_FOLDER		= training_data/faces
 NEGATIVE_ANNOTATION_FILE 	= training_data/negative.txt
@@ -58,7 +67,7 @@ clean:
 	- find training_data/no_faces -type f -delete
 
 detect:
-	python3 main.py
+	python3 check.py
 
 # Reset
 reset:
