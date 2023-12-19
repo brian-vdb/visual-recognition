@@ -30,7 +30,7 @@ while True:
     gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
 
     # Applying the face detection method on the grayscale image
-    faces = cascade.detectMultiScale(gray, 1.1, 9, minSize=(16, 16), maxSize=(48, 48))
+    faces = cascade.detectMultiScale(gray, 1.1, 9)
 
     # Map the coordinates of rectangles back to the original image
     for (x, y, w, h) in faces:
