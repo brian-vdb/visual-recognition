@@ -17,7 +17,7 @@ POSITIVE_ANNOTATION_FILE 	= training_data/positive.txt
 POSITIVE_VECTOR_FILE 		= training_data/model.vec
 
 POSITIVE_AMOUNT				= 100
-NEGATIVE_AMOUNT				= 12
+NEGATIVE_AMOUNT				= 120
 
 # Positive
 positive:
@@ -36,6 +36,7 @@ negative:
 		--resizeFactor=3 \
 		--annotations=$(NEGATIVE_ANNOTATION_FILE) \
 		--images=$(NEGATIVE_IMAGES_FOLDER)
+	sed -i 's/ 0//' $(NEGATIVE_ANNOTATION_FILE)
 
 # Vec
 vec:
