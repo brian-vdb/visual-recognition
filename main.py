@@ -1,5 +1,4 @@
 import cv2
-import numpy as np
 
 # Initialize the Camera
 camera = cv2.VideoCapture(0)
@@ -7,8 +6,8 @@ camera = cv2.VideoCapture(0)
 codec = 0x47504A4D  # MJPG
 camera.set(cv2.CAP_PROP_FPS, 60.0)
 camera.set(cv2.CAP_PROP_FOURCC, codec)
-camera.set(cv2.CAP_PROP_FRAME_WIDTH, 360)
-camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
+camera.set(cv2.CAP_PROP_FRAME_WIDTH, 720)
+camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
 # Initialize the classifier
 cascade = cv2.CascadeClassifier()
@@ -30,7 +29,7 @@ while True:
     gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
 
     # Applying the face detection method on the grayscale image
-    faces = cascade.detectMultiScale(gray, 1.1, 9)
+    faces = cascade.detectMultiScale(gray, 1.1, 12)
 
     # Map the coordinates of rectangles back to the original image
     for (x, y, w, h) in faces:
