@@ -1,5 +1,7 @@
 import cv2
 
+TRAINING_IMG_WIDTH = 160
+
 # Initialize the Camera
 camera = cv2.VideoCapture(0)
 
@@ -21,9 +23,9 @@ while True:
     ret, frame = camera.read()
 
     # Scale the image to a width of 160 pixels while maintaining the aspect ratio
-    scale_factor = 160.0 / frame.shape[1]
+    scale_factor = TRAINING_IMG_WIDTH / frame.shape[1]
     new_height = int(frame.shape[0] * scale_factor)
-    small_frame = cv2.resize(frame, (160, new_height))
+    small_frame = cv2.resize(frame, (TRAINING_IMG_WIDTH, new_height))
 
     # Convert the scaled frame to grayscale
     gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
