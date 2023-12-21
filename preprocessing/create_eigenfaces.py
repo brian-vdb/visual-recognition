@@ -114,9 +114,12 @@ def main(annotations_path, output_folder):
         # Crop the region of interest (ROI)
         roi = img[new_y:new_y + average_h, new_x:new_x + average_w]
 
-        # Save the cropped face to the output folder
+        # Convert the cropped face to grayscale
+        roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+
+        # Save the grayscale face
         output_path = os.path.join(output_folder, f"eigenface_input_{i}.jpg")
-        cv2.imwrite(output_path, roi)
+        cv2.imwrite(output_path, roi_gray)
 
 if __name__ == "__main__":
     # Create argument parser
