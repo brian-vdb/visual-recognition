@@ -26,7 +26,6 @@ def read_faceboxes(annotations_path: str) -> list[dict[str, any]]:
 
             # Check for the end of file
             if len(values) == 0:
-                print(f'Line {i}: Reached End Of File, Saved {len(faceboxes)} faces')
                 break
 
             # Get the image path and number of faces in the image
@@ -60,6 +59,7 @@ def read_faceboxes(annotations_path: str) -> list[dict[str, any]]:
                 }
                 faceboxes.append(facebox)
 
+    print(f'Info: Found {len(faceboxes)} faces')
     return faceboxes
 
 def get_size_average(faceboxes: list[dict[str, any]]) -> tuple[int, int]:
@@ -83,6 +83,7 @@ def get_size_average(faceboxes: list[dict[str, any]]) -> tuple[int, int]:
     # Calculate the average width and height
     average_width = round(total_width / len(faceboxes))
     average_height = round(total_height / len(faceboxes))
+    print(f'Info: Average Size [w, h]: [{average_width}, {average_height}]')
 
     return average_width, average_height
 
