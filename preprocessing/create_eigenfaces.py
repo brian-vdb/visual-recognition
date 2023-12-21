@@ -116,6 +116,7 @@ def main(annotations_path, output_folder):
         # Save the cropped face to the output folder
         output_path = os.path.join(output_folder, f"eigenface_input_{i}.jpg")
         cv2.imwrite(output_path, roi)
+        print(f"Cropped Face: {output_path}")
 
 if __name__ == "__main__":
     # Create argument parser
