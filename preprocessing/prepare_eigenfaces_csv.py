@@ -2,6 +2,7 @@ import os
 import sys
 import csv
 import argparse
+import re
 
 # Standard Constants
 STD_INPUT_FOLDER = "input"
@@ -9,6 +10,9 @@ STD_INPUT_FOLDER = "input"
 def main(folder_path):
     # Get a list of filenames in the specified folder
     files = os.listdir(folder_path)
+
+    # Sort files based on the numerical part of the filename
+    files.sort(key=lambda x: [int(c) if c.isdigit() else c for c in re.split('(\d+)', x)])
 
     # Create or overwrite the CSV file
     with open(os.path.join(folder_path, "eigenfaces.csv"), 'w', newline='') as csv_file:
@@ -40,4 +44,3 @@ if __name__ == "__main__":
     
     # Call the main
     main(input_folder)
-    
