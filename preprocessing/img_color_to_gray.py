@@ -21,7 +21,6 @@ def main(input_folder, output_folder):
 
             # Save the grayscale image
             cv2.imwrite(output_path, grayscale_image)
-            print(f"Converted: {file}")
         else:
             print(f"Error reading image: {file}")
 
