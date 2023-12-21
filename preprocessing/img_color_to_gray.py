@@ -3,6 +3,10 @@ import os
 import argparse
 import sys
 
+# Standard Constants
+STD_INPUT_FOLDER = "input"
+STD_OUTPUT_FOLDER = "output"
+
 def main(input_folder, output_folder):
     # List all files in the input folder
     files = os.listdir(input_folder)
@@ -23,9 +27,6 @@ def main(input_folder, output_folder):
             cv2.imwrite(output_path, grayscale_image)
         else:
             print(f"Error reading image: {file}")
-
-STD_INPUT_FOLDER = "input"
-STD_OUTPUT_FOLDER = "output"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process images and save as grayscale images.")
@@ -51,5 +52,5 @@ if __name__ == "__main__":
         output_folder = STD_OUTPUT_FOLDER
     os.makedirs(output_folder, exist_ok=True)
 
-    # Call the function to convert color images to grayscale
+    # Call the main
     main(input_folder, output_folder)
