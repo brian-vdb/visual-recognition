@@ -6,10 +6,11 @@ import sys
 
 # Standard Constants
 STD_MODELS_FOLDER = "models"
+MODEL_FILENAMES = ['cascade.xml', 'mean_face.npy', 'best_eigenfaces.npy' ,'recognizer.yml']
 STD_TEST_FOLDER = "test"
 IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
-def main():
+def main(models_folder: str, test_folder: str):
     """"""
 
 if __name__ == "__main__":
@@ -32,9 +33,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Check if the expected model files exist
-    expected_model_files = ['best_eigenfaces.npy', 'cascade.xml', 'mean_face.npy' ,'recognizer.yml']
     missing_model_files = []
-    for filename in expected_model_files:
+    for filename in MODEL_FILENAMES:
         if not os.path.isfile(os.path.join(models_folder, filename)):
             missing_model_files.append(filename)
     if len(missing_model_files) > 0:
@@ -49,4 +49,4 @@ if __name__ == "__main__":
         sys.exit(1)
     
     # Call the main
-    main()
+    main(models_folder, test_folder)
