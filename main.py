@@ -71,8 +71,6 @@ def main(models_folder: str, input_folder: str):
         # Map the coordinates of rectangles back to the original image
         eigenfaces_time_start = None
         for (x, y, w, h) in faces:
-            cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
-
             # Get the region of interest
             eigenfaces_time_start = time.time()
             face = np.array(image_gray[y:y + h, x:x + w], dtype=float)
@@ -81,9 +79,13 @@ def main(models_folder: str, input_folder: str):
             scale_x = eigenface_shape[1] / face.shape[1]
             scale_y = eigenface_shape[0] / face.shape[0]
 
-            # Apply preprocessing to the face
+            # Prepare the image for preprocessing
             face_scaled = cv2.resize(face, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_AREA)
-            face_flattened = face_scaled.reshape(-1)
+            face_normalized = ((face_scaled - face_scaled.min()) / (face_scaled.max() - face_scaled.min())) * 255
+            face = face_normalized.astype(np.uint8)
+            
+            # Apply preprocessing
+            face_flattened = face.reshape(-1)
             face_normalized = face_flattened - mean_face
             face_projected = np.dot(face_normalized, best_eigenfaces.T)
 
@@ -91,19 +93,24 @@ def main(models_folder: str, input_folder: str):
             label, confidence = recognizer.predict(face_projected)
             eigenfaces_time_stop = time.time()
             
-            # Define the text and font parameters
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            font_scale = 0.5
-            font_thickness = 1
-            font_color = (0, 255, 0)
+            if confidence < 3000:
+                cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
 
-            # Draw the class text
-            text = f'Class: {label}'
-            cv2.putText(image, text, (x, y - 6), font, font_scale, font_color, font_thickness)
+                # Define the text and font parameters
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                font_scale = 0.5
+                font_thickness = 1
+                font_color = (0, 255, 0)
 
-            # Draw the confidence text
-            text = f'Confidence: {round(confidence)}, RTF: {(eigenfaces_time_stop - eigenfaces_time_start) * 1000:.2f}ms'
-            cv2.putText(image, text, (x, y + w + 8), font, font_scale * 0.5, font_color, font_thickness)
+                # Draw the class text
+                text = f'Class: {label}'
+                cv2.putText(image, text, (x, y - 6), font, font_scale, font_color, font_thickness)
+
+                # Draw the confidence text
+                text = f'Confidence: {round(confidence)}, RTF: {(eigenfaces_time_stop - eigenfaces_time_start) * 1000:.2f}ms'
+                cv2.putText(image, text, (x, y + w + 8), font, font_scale * 0.5, font_color, font_thickness)
+            else:
+                cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 1)
 
         # Define the text and font parameters
         font = cv2.FONT_HERSHEY_SIMPLEX
