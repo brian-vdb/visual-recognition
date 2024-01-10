@@ -39,6 +39,7 @@ if __name__ == "__main__":
             missing_model_files.append(filename)
     if len(missing_model_files) > 0:
         print(f'Error: The following expected model files were missing: {missing_model_files}')
+        sys.exit(1)
     
     # Manage test folder input
     test_folder = args.test
