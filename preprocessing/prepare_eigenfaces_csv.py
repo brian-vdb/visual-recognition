@@ -6,7 +6,7 @@ import re
 
 # Standard Constants
 STD_INPUT_FOLDER = "input"
-IMAGE_EXTENSIONS = ['.jpg']
+IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
 def main(folder_path):
     # Get a list of filenames in the specified folder
