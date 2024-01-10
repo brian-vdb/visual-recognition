@@ -13,7 +13,7 @@ camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
 # Initialize the classifier
 cascade = cv2.CascadeClassifier()
-cascade.load('cascade.xml')
+cascade.load('./models/cascade.xml')
 
 # Check if the webcam is opened correctly
 if not camera.isOpened():
