@@ -48,8 +48,8 @@ def main(models_folder: str, input_folder: str):
     # Load in the eigenfaces recognition model and preprocessing vectors
     recognizer = cv2.face.EigenFaceRecognizer().create()
     recognizer.read(os.path.join(models_folder, 'recognizer.yml'))
-    best_eigenfaces = np.load(os.path.join(models_folder, 'best_eigenfaces.npy'))
-    mean_face = np.load(os.path.join(models_folder, 'mean_face.npy'))
+    best_eigenfaces = np.array(np.load(os.path.join(models_folder, 'best_eigenfaces.npy')))
+    mean_face = np.array(np.load(os.path.join(models_folder, 'mean_face.npy')))
     eigenface_shape = tuple(np.load(os.path.join(models_folder, 'eigenface_shape.npy')))
 
     # List all the images in the test folder with the accepted extensions
@@ -75,7 +75,7 @@ def main(models_folder: str, input_folder: str):
 
             # Get the region of interest
             eigenfaces_time_start = time.time()
-            face = image_gray[y:y + h, x:x + w]
+            face = np.array(image_gray[y:y + h, x:x + w], dtype=float)
 
             # Calculate the scaling factors
             scale_x = eigenface_shape[1] / face.shape[1]
