@@ -11,6 +11,9 @@ IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 def main(folder_path):
     # Get a list of filenames in the specified folder
     files = [f for f in os.listdir(folder_path) if f.lower().endswith(tuple(IMAGE_EXTENSIONS))]
+    if len(files) == 0:
+        print(f'Error: No images found in the input folder. Please provide a correct image base')
+        sys.exit(1)
 
     # Sort files based on the numerical part of the filename
     files.sort(key=lambda x: [int(c) if c.isdigit() else c for c in re.split('(\d+)', x)])

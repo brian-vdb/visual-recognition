@@ -129,7 +129,10 @@ if __name__ == "__main__":
 
     # Check if the annotations file exists
     annotations = args.annotations
-    if not os.path.isfile(annotations):
+    if annotations == None:
+        print(f'Error: Annotation file undefined. Please supply an annotation file')
+        sys.exit(1)
+    elif not os.path.isfile(annotations):
         print(f"Error: Annotations file '{annotations}' does not exist. Please provide a valid file.")
         sys.exit(1)
 
