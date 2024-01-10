@@ -9,7 +9,7 @@ import cv2
 # Standard Constants
 STD_MODELS_FOLDER = "models"
 MODEL_FILENAMES = ['cascade.xml', 'eigenface_shape.npy', 'mean_face.npy', 'best_eigenfaces.npy' ,'recognizer.yml']
-STD_TEST_FOLDER = "test"
+STD_INPUT_FOLDER = "input"
 IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
 # Function to get the screen dimensios
@@ -40,7 +40,7 @@ def scale_image_to_screen(image: np.ndarray) -> np.ndarray:
     else:
         return image
 
-def main(models_folder: str, test_folder: str):
+def main(models_folder: str, input_folder: str):
     # Load in the face detection haar cascade model
     cascade = cv2.CascadeClassifier()
     cascade.load(os.path.join(models_folder, 'cascade.xml'))
@@ -53,7 +53,7 @@ def main(models_folder: str, test_folder: str):
     eigenface_shape = tuple(np.load(os.path.join(models_folder, 'eigenface_shape.npy')))
 
     # List all the images in the test folder with the accepted extensions
-    image_paths = [os.path.join(test_folder, f) for f in os.listdir(test_folder) if f.lower().endswith(tuple(IMAGE_EXTENSIONS))]
+    image_paths = [os.path.join(input_folder, f) for f in os.listdir(input_folder) if f.lower().endswith(tuple(IMAGE_EXTENSIONS))]
 
     # Loop through every available image path
     for image_path in image_paths:
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     
     # Add arguments
     parser.add_argument("--models", type=str, help="Name of the models folder")
-    parser.add_argument("--test", type=str, help="Folder to get the test images from")
+    parser.add_argument("--input", type=str, help="Folder to get the test images from")
 
     # Parse arguments
     args = parser.parse_args()
@@ -147,13 +147,13 @@ if __name__ == "__main__":
         print(f'Error: The following expected model files were missing: {missing_model_files}')
         sys.exit(1)
     
-    # Manage test folder input
-    test_folder = args.test
-    if test_folder == None and os.path.exists(STD_TEST_FOLDER):
-        test_folder = STD_TEST_FOLDER
-    elif not os.path.exists(STD_TEST_FOLDER):
-        print(f'Error: Test folder not provided and {STD_TEST_FOLDER} does not exist. Please provide a valid folder.')
+    # Manage input folder input
+    input_folder = args.input
+    if input_folder == None and os.path.exists(STD_INPUT_FOLDER):
+        input_folder = STD_INPUT_FOLDER
+    elif not os.path.exists(STD_INPUT_FOLDER):
+        print(f'Error: Input folder not provided and {STD_INPUT_FOLDER} does not exist. Please provide a valid folder.')
         sys.exit(1)
     
     # Call the main
-    main(models_folder, test_folder)
+    main(models_folder, input_folder)
