@@ -11,7 +11,30 @@ STD_TEST_FOLDER = "test"
 IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
 def main(models_folder: str, test_folder: str):
-    """"""
+    # Load in the face detection haar cascade model
+    cascade = cv2.CascadeClassifier()
+    cascade.load(os.path.join(models_folder, 'cascade.xml'))
+
+    # List all the images in the test folder with the accepted extensions
+    image_paths = [os.path.join(test_folder, f) for f in os.listdir(test_folder) if f.lower().endswith(tuple(IMAGE_EXTENSIONS))]
+
+    # Loop through every available image path
+    for image_path in image_paths:
+        image = cv2.imread(image_path)
+
+        # Create a grayscale version of the image
+        image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # Applying face detection
+        faces = cascade.detectMultiScale(image_gray, 1.1, 12)
+
+        # Map the coordinates of rectangles back to the original image
+        for (x, y, w, h) in faces:
+            cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        
+        # Display the result after applying the trained models
+        cv2.imshow('Result', image)
+        cv2.waitKey(0)
 
 if __name__ == "__main__":
     # Create argument parser
