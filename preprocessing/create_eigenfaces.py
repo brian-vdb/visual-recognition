@@ -5,7 +5,7 @@ import math
 import cv2
 
 STD_OUTPUT_FOLDER = "output"
-MAX_IMG_SIZE = 32.0
+MAX_IMG_SIZE = 64
 
 def read_faceboxes(annotations_path: str) -> list[dict[str, any]]:
     """
