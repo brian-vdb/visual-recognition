@@ -1,6 +1,7 @@
 import os
 import argparse
 import sys
+import math
 import cv2
 
 # Output Variables
@@ -83,13 +84,13 @@ def get_size_average(faceboxes: list[dict[str, any]]) -> tuple[int, int]:
     # Calculate the average width and height
     average_width = round(total_width / len(faceboxes))
     average_height = round(total_height / len(faceboxes))
-    print(f'Info: Average Size [w, h]: [{average_width}, {average_height}]')
+    print(f'Info: Average Size [h, w]: [{average_height}, {average_width}]')
 
     return average_width, average_height
 
 def main(annotations_path, output_folder):
     faceboxes = read_faceboxes(annotations_path)
-    average_w, average_h = get_size_average(faceboxes)
+    w_average, h_average = get_size_average(faceboxes)
 
     # Iterate through faceboxes
     for i, facebox in enumerate(faceboxes):
@@ -99,22 +100,29 @@ def main(annotations_path, output_folder):
         # Extract face box coordinates
         x, y, w, h = int(facebox['x']), int(facebox['y']), int(facebox['w']), int(facebox['h'])
 
+        # make the ratio equal to the average ratio
+        average_ratio = h_average / w_average
+        h_expected = round(average_ratio * w)
+        y += math.floor((h - h_expected) / 2)
+        h = h_expected
+        if y < 0:
+            continue
+
         # Copy the face from the image
         face = image[y:y + h, x:x + w]
 
-        # Calculate the scaling factors
-        scale_x = average_w / w
-        scale_y = average_h / h
+        # Convert the cropped face to grayscale
+        face_gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
 
         # Scale the face to the desired size
-        face_scaled = cv2.resize(face, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_AREA)
-
-        # Convert the cropped face to grayscale
-        face_gray = cv2.cvtColor(face_scaled, cv2.COLOR_BGR2GRAY)
+        x_scale = w_average / w
+        y_scale = h_average / h
+        face_scaled = cv2.resize(face_gray, None, fx=x_scale, fy=y_scale, interpolation=cv2.INTER_AREA)
+        print(face_scaled.shape)
 
         # Save the grayscale face
         output_path = os.path.join(output_folder, f"eigenface_input_{i}.jpg")
-        cv2.imwrite(output_path, face_gray)
+        cv2.imwrite(output_path, face_scaled)
 
 if __name__ == "__main__":
     # Create argument parser
