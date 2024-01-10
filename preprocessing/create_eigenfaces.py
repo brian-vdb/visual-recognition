@@ -4,8 +4,8 @@ import sys
 import math
 import cv2
 
-# Output Variables
 STD_OUTPUT_FOLDER = "output"
+MAX_IMG_SIZE = 32.0
 
 def read_faceboxes(annotations_path: str) -> list[dict[str, any]]:
     """
@@ -91,6 +91,7 @@ def get_size_average(faceboxes: list[dict[str, any]]) -> tuple[int, int]:
 def main(annotations_path, output_folder):
     faceboxes = read_faceboxes(annotations_path)
     w_average, h_average = get_size_average(faceboxes)
+    face = None
 
     # Iterate through faceboxes
     for i, facebox in enumerate(faceboxes):
@@ -119,9 +120,14 @@ def main(annotations_path, output_folder):
         y_scale = h_average / h
         face_scaled = cv2.resize(face_gray, None, fx=x_scale, fy=y_scale, interpolation=cv2.INTER_AREA)
 
+        # Finally scale the images to a fixed maximum window size
+        scale_factor = MAX_IMG_SIZE / w_average if w_average > h_average else MAX_IMG_SIZE / h_average
+        face = cv2.resize(face_scaled, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_AREA)
+
         # Save the grayscale face
         output_path = os.path.join(output_folder, f"eigenface_input_{i}.jpg")
-        cv2.imwrite(output_path, face_scaled)
+        cv2.imwrite(output_path, face)
+    print(f'Info: Output Shape [h, w]: [{len(face)}, {len(face[0])}]')
 
 if __name__ == "__main__":
     # Create argument parser

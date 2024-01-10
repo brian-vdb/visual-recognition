@@ -63,17 +63,18 @@ def main(models_folder: str, test_folder: str):
         # Create a grayscale version of the image
         image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        # Measure the start time
-        time_start = time.time()
-
         # Applying face detection
+        cascade_time_start = time.time()
         faces = cascade.detectMultiScale(image_gray)
+        cascade_time_stop = time.time()
 
         # Map the coordinates of rectangles back to the original image
+        eigenfaces_time_start = None
         for (x, y, w, h) in faces:
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
 
             # Get the region of interest
+            eigenfaces_time_start = time.time()
             face = image_gray[y:y + h, x:x + w]
 
             # Calculate the scaling factors
@@ -88,6 +89,7 @@ def main(models_folder: str, test_folder: str):
 
             # Recognize the projected face using the trained recognizer
             label, confidence = recognizer.predict(face_projected)
+            eigenfaces_time_stop = time.time()
             
             # Define the text and font parameters
             font = cv2.FONT_HERSHEY_SIMPLEX
@@ -100,11 +102,8 @@ def main(models_folder: str, test_folder: str):
             cv2.putText(image, text, (x, y - 6), font, font_scale, font_color, font_thickness)
 
             # Draw the confidence text
-            text = f'Confidence: {round(confidence)}'
+            text = f'Confidence: {round(confidence)}, RTF: {(eigenfaces_time_stop - eigenfaces_time_start) * 1000:.2f}ms'
             cv2.putText(image, text, (x, y + w + 8), font, font_scale * 0.5, font_color, font_thickness)
-
-        # Measure the end time
-        time_end = time.time()
 
         # Define the text and font parameters
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -113,7 +112,7 @@ def main(models_folder: str, test_folder: str):
         font_color = (0, 0, 255)
 
         # Draw the class text
-        text = f'RTF: {(time_end - time_start) * 1000}'
+        text = f'Haar Cascade RTF: {(cascade_time_stop - cascade_time_start) * 1000:.2f}ms'
         cv2.putText(image, text, (5, 10), font, font_scale, font_color, font_thickness)
 
         # Display the result after applying the trained models
