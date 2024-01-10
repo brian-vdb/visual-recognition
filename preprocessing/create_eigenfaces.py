@@ -118,7 +118,6 @@ def main(annotations_path, output_folder):
         x_scale = w_average / w
         y_scale = h_average / h
         face_scaled = cv2.resize(face_gray, None, fx=x_scale, fy=y_scale, interpolation=cv2.INTER_AREA)
-        print(face_scaled.shape)
 
         # Save the grayscale face
         output_path = os.path.join(output_folder, f"eigenface_input_{i}.jpg")
