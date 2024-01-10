@@ -94,32 +94,27 @@ def main(annotations_path, output_folder):
     # Iterate through faceboxes
     for i, facebox in enumerate(faceboxes):
         # Read the image
-        img = cv2.imread(facebox['filename'])
+        image = cv2.imread(facebox['filename'])
 
         # Extract face box coordinates
         x, y, w, h = int(facebox['x']), int(facebox['y']), int(facebox['w']), int(facebox['h'])
 
-        # Get the differences
-        difference_w = average_w - w
-        difference_h = average_h - h
+        # Copy the face from the image
+        face = image[y:y + h, x:x + w]
 
-        # Get the relative new start coords
-        new_x = x - round(difference_w / 2)
-        new_y = y - round(difference_h / 2)
+        # Calculate the scaling factors
+        scale_x = average_w / w
+        scale_y = average_h / h
 
-        # Check if the resized box is possible
-        if new_y + average_h > len(img) or new_x + average_w > len(img[0]):
-            continue
-
-        # Crop the region of interest (ROI)
-        roi = img[new_y:new_y + average_h, new_x:new_x + average_w]
+        # Scale the face to the desired size
+        face_scaled = cv2.resize(face, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_AREA)
 
         # Convert the cropped face to grayscale
-        roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        face_gray = cv2.cvtColor(face_scaled, cv2.COLOR_BGR2GRAY)
 
         # Save the grayscale face
         output_path = os.path.join(output_folder, f"eigenface_input_{i}.jpg")
-        cv2.imwrite(output_path, roi_gray)
+        cv2.imwrite(output_path, face_gray)
 
 if __name__ == "__main__":
     # Create argument parser
