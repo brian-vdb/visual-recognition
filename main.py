@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 import ctypes
+import time
 import numpy as np
 import cv2
 
@@ -62,6 +63,9 @@ def main(models_folder: str, test_folder: str):
         # Create a grayscale version of the image
         image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+        # Measure the start time
+        time_start = time.time()
+
         # Applying face detection
         faces = cascade.detectMultiScale(image_gray)
 
@@ -98,6 +102,19 @@ def main(models_folder: str, test_folder: str):
             # Draw the confidence text
             text = f'Confidence: {round(confidence)}'
             cv2.putText(image, text, (x, y + w + 8), font, font_scale * 0.5, font_color, font_thickness)
+
+        # Measure the end time
+        time_end = time.time()
+
+        # Define the text and font parameters
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.25
+        font_thickness = 1
+        font_color = (0, 0, 255)
+
+        # Draw the class text
+        text = f'RTF: {(time_end - time_start) * 1000}'
+        cv2.putText(image, text, (5, 10), font, font_scale, font_color, font_thickness)
 
         # Display the result after applying the trained models
         cv2.imshow('Result', image)
