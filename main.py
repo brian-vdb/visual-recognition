@@ -82,7 +82,8 @@ def main(models_folder: str, input_folder: str):
             # Prepare the image for preprocessing
             face_scaled = cv2.resize(face, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_AREA)
             face_normalized = ((face_scaled - face_scaled.min()) / (face_scaled.max() - face_scaled.min())) * 255
-            face = face_normalized.astype(np.uint8)
+            image_blurred = cv2.GaussianBlur(face_normalized, (3, 3), 0)
+            face = image_blurred.astype(np.uint8)
             
             # Apply preprocessing
             face_flattened = face.reshape(-1)
