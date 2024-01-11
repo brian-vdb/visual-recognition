@@ -22,6 +22,15 @@ STREAM_HEIGHT = 720
 annotation_i = 0
 
 def squarify_image(image: np.ndarray) -> np.ndarray:
+    """
+    Adjusts the image to form a square by cropping the longer axis.
+
+    Parameters:
+    - image (np.ndarray): The input image.
+
+    Returns:
+    np.ndarray: The adjusted square image.
+    """
     image_width = len(image[0])
     image_height = len(image)
 
@@ -38,6 +47,15 @@ def squarify_image(image: np.ndarray) -> np.ndarray:
         return image[new_y:new_y + new_h, 0:0 + image_width]
 
 def squarify_box(box: list[int]) -> list[int]:
+    """
+    Turns a detected face bounding box into a square.
+
+    Parameters:
+    - box (list[int]): The list of four integer values representing the bounding box coordinates (x, y, width, height).
+
+    Returns:
+    list[int]: The adjusted bounding box coordinates to form a square or None if the adjustment is not valid.
+    """
     # Turn the detected face into a square
     new_width = box[3]
     width_difference = new_width - box[2]
@@ -52,6 +70,16 @@ def squarify_box(box: list[int]) -> list[int]:
         return None
 
 def draw_box(image: np.ndarray, box: list[int]) -> np.ndarray:
+    """
+    Draws a bounding box on the input image.
+
+    Parameters:
+    - image (np.ndarray): The input image.
+    - box (list[int]): The list of four integer values representing the bounding box coordinates (x, y, width, height).
+
+    Returns:
+    np.ndarray: The image with the bounding box drawn.
+    """
     # Limit the box to be higher than 0
     for i, val in enumerate(box):
         if val < 0:
@@ -63,6 +91,15 @@ def draw_box(image: np.ndarray, box: list[int]) -> np.ndarray:
     return image
 
 def draw_options(image: np.ndarray) -> np.ndarray:
+    """
+    Draws annotation options on the input image.
+
+    Parameters:
+    - image (np.ndarray): The input image.
+
+    Returns:
+    np.ndarray: The image with annotation options drawn.
+    """
     # Define the text and font parameters
     font = cv2.FONT_HERSHEY_SIMPLEX
     font_scale = 0.5
@@ -83,13 +120,38 @@ def draw_options(image: np.ndarray) -> np.ndarray:
 
     # Draw a box to contain the options
     cv2.rectangle(image, [2, 2, 175, 70], font_color, 1)
-
     return image
 
-def save_image_and_annotation(image: np.ndarray, annotation: str):
-    """"""
+def save_image_and_annotation(image: np.ndarray, path: str, annotation_file_path: str, annotation: str) -> None:
+    """
+    Saves an annotated image and its corresponding annotation to specified paths.
+
+    Parameters:
+    - image (np.ndarray): The image to be saved.
+    - path (str): The path to save the image.
+    - annotation_file_path (str): The path to the annotation file.
+    - annotation (str): The annotation information to be written to the file.
+
+    Returns:
+    None
+    """
+    cv2.imwrite(path, image)
+    with open(annotation_file_path, "a") as file:
+        file.write(f'{annotation}\n')
 
 def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output_folder: str) -> int:
+    """
+    Detects faces in an image using YuNet, displays options, and handles user input.
+
+    Parameters:
+    - yunet (cv2.FaceDetectorYN): The face detector.
+    - image (np.ndarray): The input image.
+    - output_folder (str): The folder to save annotated frames.
+
+    Returns:
+    int: The number of faces detected and annotated. Returns 0 if the user chooses to discard annotations,
+         -1 if the user chooses to quit the application.
+    """
     # Make the aspect ratio square
     image = squarify_image(image)
     
@@ -150,7 +212,7 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
             annotation = f'{annotation} {box[0]} {box[1]} {box[2]} {box[3]}'
 
         # Save the annotated image
-        save_image_and_annotation(image, annotation)
+        save_image_and_annotation(image, path, os.path.join(output_folder, 'info.dat'), annotation)
 
         return no_faces
     elif key == ord('r'):
@@ -161,7 +223,17 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
         cv2.destroyAllWindows()
         return -1
 
-def process_webcam(yunet: cv2.FaceDetectorYN, output_folder: str):
+def process_webcam(yunet: cv2.FaceDetectorYN, output_folder: str) -> None:
+    """
+    Processes frames from the webcam stream, detects and handles faces, and prints the number of annotated faces.
+
+    Parameters:
+    - yunet (cv2.FaceDetectorYN): The face detector.
+    - output_folder (str): The folder to save the annotated frames.
+
+    Returns:
+    None
+    """
     # Initialize the webcam stream
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
