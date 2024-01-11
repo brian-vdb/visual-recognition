@@ -9,7 +9,7 @@ For both face detection and face recognition, we will need to annotate faces wit
 To run this program, you simply run:
 
 ```bash
-python annotation.py --models {models_path} --input {input_path} --output {output_path}
+python src\annotation.py --models {models_path} --input {input_path} --output {output_path}
 ```
 
 - The models path is defined as 'models' if left undefined and it is required to contain a yunet model called 'yunet.onnx'.
@@ -23,7 +23,7 @@ The most important part of our application is that it needs to be able to use th
 To tun this program, you simply run:
 
 ```bash
-python main.py --models {model_path} --input {input_path}
+python src\main.py --models {model_path} --input {input_path}
 ```
 
 - The models path is defined as 'models' if left undefined and it is required to contain a the following files: 'cascade.xml', 'target_shape.npy', 'mean_face.npy', 'best_eigenfaces.npy' and 'recognizer.yml'. Cascade.xml can either be found online or you can train one yourself. The other files are used for eigenfaces and can be created using the 'face_recognition.ipynb' notebook.
