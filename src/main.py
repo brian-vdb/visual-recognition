@@ -1,3 +1,8 @@
+"""
+Author: Brian van den Berg
+Description: Apply the trained models to a folder of test data using face detection and recognition.
+"""
+
 import argparse
 import os
 import sys

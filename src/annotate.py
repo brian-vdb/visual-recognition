@@ -1,3 +1,8 @@
+"""
+Author: Brian van den Berg
+Description: Apply the pre-trained YuNet model to detect faces in images or from a webcam stream for perfect, almost automatic annotation work.
+"""
+
 import argparse
 import os
 import sys
