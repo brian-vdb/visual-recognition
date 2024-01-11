@@ -24,6 +24,15 @@ mean_face = None
 target_shape = None
 
 def init_models(models_folder: str) -> None:
+    """
+    Initializes face detection and recognition models, as well as eigenface preprocessing information.
+
+    Parameters:
+    - models_folder (str): The folder containing the pre-trained models and preprocessing information.
+
+    Returns:
+    None
+    """
     # Call the globals
     global cascade, recognizer, best_eigenfaces, mean_face, target_shape
 
@@ -41,6 +50,16 @@ def init_models(models_folder: str) -> None:
     target_shape = tuple(np.load(os.path.join(models_folder, 'target_shape.npy')))
 
 def prepare_face(face: np.ndarray, target_shape: tuple[int, int]) -> np.ndarray:
+    """
+    Prepares the input face for eigenface preprocessing by converting to grayscale, scaling, normalizing, and blurring.
+
+    Parameters:
+    - face (np.ndarray): The input face image.
+    - target_shape (tuple[int, int]): The target shape for the prepared face.
+
+    Returns:
+    np.ndarray: The prepared face for eigenface preprocessing.
+    """
     # Convert the face to grayscale
     face_gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
 
@@ -57,11 +76,32 @@ def prepare_face(face: np.ndarray, target_shape: tuple[int, int]) -> np.ndarray:
     return image_blurred.astype(np.uint8)
 
 def apply_eigenfaces(face: np.ndarray, mean: np.ndarray, best_eigenfaces: np.ndarray) -> np.ndarray:
+    """
+    Applies eigenface transformation to the input face.
+
+    Parameters:
+    - face (np.ndarray): The input face image.
+    - mean (np.ndarray): The mean face used for normalization.
+    - best_eigenfaces (np.ndarray): The matrix of best eigenfaces.
+
+    Returns:
+    np.ndarray: The projected face in the eigenvector space.
+    """
     face_flattened = face.reshape(-1)
     face_normalized = face_flattened - mean
     return np.dot(face_normalized, best_eigenfaces.T)
 
 def detect_and_recognize_faces(image: np.ndarray) -> np.ndarray:
+    """
+    Detects faces in the input image, applies eigenface preprocessing, projects faces into the eigenvector space,
+    recognizes faces using a recognizer, and annotates the image with recognized face labels and confidence.
+
+    Parameters:
+    - image (np.ndarray): The input image.
+
+    Returns:
+    np.ndarray: The annotated image with recognized faces.
+    """
     faces = cascade.detectMultiScale(image)
     for (x, y, w, h) in faces:
         eigenfaces_time_start = time.time()
@@ -99,7 +139,17 @@ def detect_and_recognize_faces(image: np.ndarray) -> np.ndarray:
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 1)
     return image
 
-def main_webcam():
+def main_webcam() -> None:
+    """
+    Initializes the webcam stream, applies face detection and recognition models,
+    and continuously displays the webcam feed until the user presses 'Q' to quit.
+
+    Parameters:
+    None
+
+    Returns:
+    None
+    """
     # Initialize the webcam stream
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
@@ -127,8 +177,19 @@ def main_webcam():
 
     # Clean the application
     cv2.destroyAllWindows()
+    sys.exit(0)
 
-def main_images(input_folder: str):
+def main_images(input_folder: str) -> None:
+    """
+    Loads and displays images from the input folder, applies face detection and recognition models,
+    and allows the user to navigate through images with the option to quit by pressing 'Q'.
+
+    Parameters:
+    - input_folder (str): The folder containing input images.
+
+    Returns:
+    None
+    """
     # List all the images in the input folder with the accepted extensions
     image_paths = [os.path.join(input_folder, f) for f in os.listdir(input_folder) if f.lower().endswith(tuple(IMAGE_EXTENSIONS))]
     for path in image_paths:
