@@ -223,7 +223,7 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
         print(f'User QUIT')
         return -1
 
-def process_webcam(yunet: cv2.FaceDetectorYN, output_folder: str) -> None:
+def main_webcam(yunet: cv2.FaceDetectorYN, output_folder: str) -> None:
     """
     Processes frames from the webcam stream, detects and handles faces, and prints the number of annotated faces.
 
@@ -261,7 +261,7 @@ def process_webcam(yunet: cv2.FaceDetectorYN, output_folder: str) -> None:
         for _ in range(3):
             cap.read()
 
-def process_images(yunet: cv2.FaceDetectorYN, input_folder: str, output_folder: str) -> None:
+def main_images(yunet: cv2.FaceDetectorYN, input_folder: str, output_folder: str) -> None:
     """
     Processes images from the input folder, detects and handles faces, and saves annotated frames to the output folder.
 
@@ -340,9 +340,9 @@ if __name__ == '__main__':
     # Manage input folder input
     input_folder = args.input
     if input_folder == None:
-        process_webcam(yunet, output_folder)
+        main_webcam(yunet, output_folder)
     elif os.path.exists(input_folder):
-        process_images(yunet, input_folder, output_folder)
+        main_images(yunet, input_folder, output_folder)
     else:
         print(f'Error: Input folder provided does not exist. Please provide a valid folder.')
         sys.exit(1)

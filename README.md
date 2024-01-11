@@ -15,3 +15,16 @@ python annotation.py --models {models_path} --input {input_path} --output {outpu
 - The models path is defined as 'models' if left undefined and it is required to contain a yunet model called 'yunet.onnx'.
 - The input path is ignored if left undefined and instead, the application will attempt to start a webcam stream.
 - The output path is completely optional and will be 'output' if left undefined.
+
+## Main
+
+The most important part of our application is that it needs to be able to use the trained models and parameters to perform face detection and recognition, this can be done in the main using either an input folder or a webcam stream. This all depends on the wishes for how the user wants to test their models and it can be switched based on if you provide an input folder or not. During the execution, recognized faces will be shown in green with the label assosicated with the face, while unrecognized detections are drawn with red. These are typically False Positives, but due to the nature of Eigenfaces, normal faces are sometimes also hard to recognize due to rotations or ambient lightning differences.
+
+To tun this program, you simply run:
+
+```bash
+python main.py --models {model_path} --input {input_path}
+```
+
+- The models path is defined as 'models' if left undefined and it is required to contain a yunet model called 'yunet.onnx'.
+- The input path is ignored if left undefined and instead, the application will attempt to start a webcam stream.
