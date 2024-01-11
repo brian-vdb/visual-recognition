@@ -5,13 +5,13 @@ import argparse
 import cv2
 import numpy as np
 
-# Standard Constants
+# Standard Input Constants
 STD_MODELS_FOLDER = "models"
-MODEL_FILENAMES = ['cascade.xml', 'eigenface_shape.npy', 'mean_face.npy', 'best_eigenfaces.npy' ,'recognizer.yml']
+STD_MODEL_FILENAMES = ['cascade.xml', 'eigenface_shape.npy', 'mean_face.npy', 'best_eigenfaces.npy' ,'recognizer.yml']
 
 # Define the width and height
-WIDTH = 640
-HEIGHT = 480
+STREAM_WIDTH = 640
+STREAM_HEIGHT = 480
 
 def prepare_face(face: np.ndarray, target_shape: tuple[int, int]) -> np.ndarray:
     # Convert the face to grayscale
@@ -54,8 +54,8 @@ def main(models_folder: str):
     # Set the stream properties
     codec = 0x47504A4D  # MJPG
     cap.set(cv2.CAP_PROP_FOURCC, codec)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, WIDTH)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, HEIGHT)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, STREAM_WIDTH)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, STREAM_HEIGHT)
     cap.set(cv2.CAP_PROP_FPS, 60.0)
 
     while True:
@@ -129,7 +129,7 @@ if __name__ == '__main__':
 
     # Check if the expected model files exist
     missing_model_files = []
-    for filename in MODEL_FILENAMES:
+    for filename in STD_MODEL_FILENAMES:
         if not os.path.isfile(os.path.join(models_folder, filename)):
             missing_model_files.append(filename)
     if len(missing_model_files) > 0:
