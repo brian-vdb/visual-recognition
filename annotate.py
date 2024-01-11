@@ -9,6 +9,7 @@ import copy
 STD_MODELS_FOLDER = "models"
 STD_MODEL_FILENAMES = ['yunet.onnx']
 STD_OUTPUT_FOLDER = "output"
+IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
 # Yunet Input Size
 YUNET_WIDTH = 500
@@ -204,7 +205,7 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
 
     # Handle the user's choice
     if key == ord('a'):
-        print("User pressed 'a' key.")
+        print(f'User ACCEPTED: "{path}"')
 
         # Formulate the annotation
         annotation = f'{path} {no_faces}'
@@ -216,11 +217,10 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
 
         return no_faces
     elif key == ord('r'):
-        print("User pressed 'r' key.")
+        print(f'User REJECTED: "{path}"')
         return 0
     elif key == ord('q'):
-        # Clean the application
-        cv2.destroyAllWindows()
+        print(f'User QUIT')
         return -1
 
 def process_webcam(yunet: cv2.FaceDetectorYN, output_folder: str) -> None:
@@ -251,7 +251,8 @@ def process_webcam(yunet: cv2.FaceDetectorYN, output_folder: str) -> None:
             # Perform the annotation on the current frame
             ret = detect_and_handle_faces(yunet, frame, output_folder)
             if ret < 0:
-                sys.exit(1)
+                cv2.destroyAllWindows()
+                sys.exit(0)
             
             # Print the number of annotated faces
             print(f'Number of faces annotated: {ret}')
@@ -260,8 +261,29 @@ def process_webcam(yunet: cv2.FaceDetectorYN, output_folder: str) -> None:
         for _ in range(3):
             cap.read()
 
-def process_images(yunet: cv2.FaceDetectorYN, input_folder: str, output_folder: str):
-    """"""
+def process_images(yunet: cv2.FaceDetectorYN, input_folder: str, output_folder: str) -> None:
+    """
+    Processes images from the input folder, detects and handles faces, and saves annotated frames to the output folder.
+
+    Parameters:
+    - yunet (cv2.FaceDetectorYN): The face detector.
+    - input_folder (str): The folder containing input images.
+    - output_folder (str): The folder to save annotated frames.
+
+    Returns:
+    None
+    """
+    # List all the images in the input folder with the accepted extensions
+    image_paths = [os.path.join(input_folder, f) for f in os.listdir(input_folder) if f.lower().endswith(tuple(IMAGE_EXTENSIONS))]
+    for path in image_paths:
+        image = cv2.imread(path)
+        ret = detect_and_handle_faces(yunet, image, output_folder)
+        if ret < 0:
+            break
+    
+    # Finished running
+    cv2.destroyAllWindows()
+    sys.exit(0)
 
 if __name__ == '__main__':
     # Create argument parser
@@ -305,6 +327,15 @@ if __name__ == '__main__':
     if output_folder == None:
         output_folder = STD_OUTPUT_FOLDER
     os.makedirs(output_folder, exist_ok=True)
+
+    # Clear the annotation file if present already
+    with open(os.path.join(output_folder, 'info.dat'), "w") as file:
+        file.write('')
+
+    # Remove the other images
+    image_paths = [os.path.join(output_folder, f) for f in os.listdir(output_folder) if f.lower().endswith(tuple(IMAGE_EXTENSIONS))]
+    for path in image_paths:
+        os.remove(path)
 
     # Manage input folder input
     input_folder = args.input
