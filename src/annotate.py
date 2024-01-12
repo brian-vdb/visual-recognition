@@ -17,8 +17,8 @@ STD_OUTPUT_FOLDER = "output"
 IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
 # Yunet Input Size
-YUNET_WIDTH = 500
-YUNET_HEIGHT = 500
+YUNET_WIDTH = 720
+YUNET_HEIGHT = 720
 
 # Stream Size
 STREAM_WIDTH = 1280
@@ -62,6 +62,8 @@ def squarify_box(box: list[int]) -> list[int]:
     Returns:
     list[int]: The adjusted bounding box coordinates to form a square or None if the adjustment is not valid.
     """
+    global YUNET_WIDTH
+
     # Turn the detected face into a square
     new_width = box[3]
     width_difference = new_width - box[2]
@@ -158,6 +160,8 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
     int: The number of faces detected and annotated. Returns 0 if the user chooses to discard annotations,
          -1 if the user chooses to quit the application.
     """
+    global annotation_i
+
     # Make the aspect ratio square
     image = squarify_image(image)
     
@@ -166,7 +170,6 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
     image = cv2.resize(image, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_AREA)
 
     # Start an annotation
-    global annotation_i
     path = os.path.join(output_folder, f'auto_annotated_{annotation_i}.jpg')
     no_faces = 0
     boxes = []
@@ -177,9 +180,6 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
     _, faces = yunet.detect(display_image)
     # Draw rectangles
     if faces is not None:
-        # Save the actual number of faces
-        no_faces = len(faces)
-
         # Handle every face
         for face in faces:
             box = list(map(int, face[:4]))
@@ -194,6 +194,9 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
 
             # Draw a box around the face
             display_image = draw_box(display_image, box)
+
+        # Save the actual number of faces
+        no_faces = len(boxes)
 
     # Draw the options on the frame
     display_image = draw_options(display_image)
@@ -239,6 +242,8 @@ def main_webcam(yunet: cv2.FaceDetectorYN, output_folder: str) -> None:
     Returns:
     None
     """
+    global STREAM_WIDTH, STREAM_HEIGHT
+
     # Initialize the webcam stream
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
@@ -336,11 +341,6 @@ if __name__ == '__main__':
     # Clear the annotation file if present already
     with open(os.path.join(output_folder, 'info.dat'), "w") as file:
         file.write('')
-
-    # Remove the other images
-    image_paths = [os.path.join(output_folder, f) for f in os.listdir(output_folder) if f.lower().endswith(tuple(IMAGE_EXTENSIONS))]
-    for path in image_paths:
-        os.remove(path)
 
     # Manage input folder input
     input_folder = args.input
