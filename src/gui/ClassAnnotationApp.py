@@ -1,4 +1,6 @@
+import os
 import csv
+import pickle
 import tkinter as tk
 from PIL import Image, ImageTk
 
@@ -74,7 +76,7 @@ class ClassAnnotationApp:
     def write_csv(self, data: list[dict[str, any]], annotations: str) -> None:
         """Write the data to a CSV file."""
         with open(self.annotations_path, 'w', newline='') as csv_file:
-            fieldnames = data[0].keys() if data else []  # Use keys from the first entry as fieldnames
+            fieldnames = data[0].keys() if data else []
             csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
 
             # Write the header
@@ -85,7 +87,25 @@ class ClassAnnotationApp:
 
     def save_and_quit(self) -> None:
         """Save the annotations to the CSV file and quit the application."""
+        # Remove the leftover images
+        while self.index < len(self.data):
+            os.remove(self.data[self.index]['Filename'])
+            self.data.pop(self.index)
+
+        # Save the labeled data
         self.write_csv(self.data, self.annotations_path)
+
+        # Get the directory containing the annotations file
+        input_path = os.path.dirname(self.annotations_path)
+        print(input_path)
+
+        # Assuming 'class_dictionary.pkl' as the desired filename
+        filename = 'class_dictionary.pkl'
+
+        # Save the class dictionary
+        with open(os.path.join(input_path, filename), 'wb') as file:
+            pickle.dump(self.class_dictionary, file)
+
         self.master.quit()
 
     def show_image(self) -> int:
@@ -134,24 +154,29 @@ class ClassAnnotationApp:
         # Continue to the next image
         self.index += 1
         return self.show_image()
-
-    def delete_and_continue(self) -> int:
+    
+    def assign_to_existing_class(self, class_id: int) -> int:
         """
-        Delete the current entry and move to the next one.
+        Assign the current image to the selected existing class.
+
+        Parameters:
+        - class_id: The ID of the existing class.
 
         Returns:
         0 if successful, -1 if the last image was reached.
         """
-        if self.index >= len(self.data):
-            # Return an error if the last image was reached
-            self.save_and_quit()
-            return -1
+        return self.insert_and_continue(class_id)
 
-        # Remove the current image data at the current index
-        self.data.pop(self.index)
+    def create_class_button(self, class_id):
+        """
+        Dynamically create a button for the newly created class.
 
-        # Continue to the next image
-        return self.show_image()
+        Parameters:
+        - class_id: The ID of the newly created class.
+        """
+        class_name = self.class_dictionary[class_id]
+        button = tk.Button(self.master, text=f"Assign to {class_name}", command=lambda id=class_id: self.assign_to_existing_class(id), width=30)
+        button.pack(side=tk.TOP, padx=5, pady=5)
 
     def create_class(self) -> int:
         """
@@ -175,33 +200,31 @@ class ClassAnnotationApp:
 
         # Handle the labeling
         return self.insert_and_continue(self.current_class)
-
-    def delete_entry(self):
-        """Delete the current entry and move to the next one."""
-        return self.delete_and_continue()
-
-    def assign_to_existing_class(self, class_id: int) -> int:
+    
+    def delete_and_continue(self) -> int:
         """
-        Assign the current image to the selected existing class.
-
-        Parameters:
-        - class_id: The ID of the existing class.
+        Delete the current entry and move to the next one.
 
         Returns:
         0 if successful, -1 if the last image was reached.
         """
-        return self.insert_and_continue(class_id)
+        if self.index >= len(self.data):
+            # Return an error if the last image was reached
+            self.save_and_quit()
+            return -1
 
-    def create_class_button(self, class_id):
-        """
-        Dynamically create a button for the newly created class.
+        # Delete the corresponding image
+        os.remove(self.data[self.index]['Filename'])
 
-        Parameters:
-        - class_id: The ID of the newly created class.
-        """
-        class_name = self.class_dictionary[class_id]
-        button = tk.Button(self.master, text=f"Assign to {class_name}", command=lambda id=class_id: self.assign_to_existing_class(id), width=30)
-        button.pack(side=tk.TOP, padx=5, pady=5)
+        # Remove the current image data at the current index
+        self.data.pop(self.index)
+
+        # Continue to the next image
+        return self.show_image()
+    
+    def delete_entry(self):
+        """Delete the current entry and move to the next one."""
+        return self.delete_and_continue()
 
 def run_class_annotation_app(annotations_path: str) -> None:
     # Create the main Tkinter window
