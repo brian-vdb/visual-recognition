@@ -26,7 +26,7 @@ STD_INPUT_FOLDER = 'input'
 STD_INPUT_FILENAMES = ['info.dat']
 STD_OUTPUT_FOLDER = 'output'
 IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
-EIGENFACE_BOX_SIZE = 64
+EIGENFACE_BOX_SIZE = 128
 
 def read_boxes(annotations_path: str) -> list[dict[str, any]]:
     """
