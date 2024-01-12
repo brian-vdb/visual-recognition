@@ -5,15 +5,25 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 class ClassAnnotationApp:
-    """An application for annotating images with class labels."""
+    """
+    An application for annotating images with class labels.
+
+    Attributes:
+    - annotations_path (str): Path to the CSV file containing image annotations.
+    - data (list[dict[str, any]]): List of dictionaries containing image annotations.
+    - index (int): Index to track the current image being annotated.
+    - master (Tk): The master window for the application.
+    - current_class (int): ID of the current class being created.
+    - class_dictionary (dict[int, str]): Dictionary to store class labels.
+    """
 
     def __init__(self, master, annotations_path):
         """
-        Initialize the ImageApp.
+        Initialize the ClassAnnotationApp.
 
         Parameters:
-        - master: The master window.
-        - annotations_path: Path to the CSV file containing image annotations.
+        - master (Tk): The master window.
+        - annotations_path (str): Path to the CSV file containing image annotations.
         """
         self.annotations_path = annotations_path
         self.data = self.read_csv(self.annotations_path)
@@ -41,7 +51,7 @@ class ClassAnnotationApp:
         self.quit_button.pack(side=tk.LEFT, padx=5)
 
         # Button to delete the current entry
-        self.delete_button = tk.Button(master, text="Delete", command=self.delete_entry, width=30)
+        self.delete_button = tk.Button(master, text="Delete", command=self.delete_and_continue, width=30)
         self.delete_button.pack(side=tk.TOP, padx=5, pady=5)
 
         # Display the initial image
@@ -52,7 +62,7 @@ class ClassAnnotationApp:
         Read data from a CSV file and return a list of dictionaries.
 
         Parameters:
-        - annotations: Path to the CSV file.
+        - annotations (str): Path to the CSV file.
 
         Returns:
         A list of dictionaries containing image annotations.
@@ -138,7 +148,7 @@ class ClassAnnotationApp:
         Label the current image and move to the next one.
 
         Parameters:
-        - label: The class label to assign to the current image.
+        - label (int): The class label to assign to the current image.
 
         Returns:
         0 if successful, -1 if the last image was reached.
@@ -160,7 +170,7 @@ class ClassAnnotationApp:
         Assign the current image to the selected existing class.
 
         Parameters:
-        - class_id: The ID of the existing class.
+        - class_id (int): The ID of the existing class.
 
         Returns:
         0 if successful, -1 if the last image was reached.
@@ -172,7 +182,7 @@ class ClassAnnotationApp:
         Dynamically create a button for the newly created class.
 
         Parameters:
-        - class_id: The ID of the newly created class.
+        - class_id (int): The ID of the newly created class.
         """
         class_name = self.class_dictionary[class_id]
         button = tk.Button(self.master, text=f"Assign to {class_name}", command=lambda id=class_id: self.assign_to_existing_class(id), width=30)
@@ -221,10 +231,6 @@ class ClassAnnotationApp:
 
         # Continue to the next image
         return self.show_image()
-    
-    def delete_entry(self):
-        """Delete the current entry and move to the next one."""
-        return self.delete_and_continue()
 
 def run_class_annotation_app(annotations_path: str) -> None:
     # Create the main Tkinter window
