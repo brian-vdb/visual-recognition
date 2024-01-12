@@ -1,3 +1,10 @@
+"""
+Author: Brian van den Berg
+Description: Annotate images with class labels using a simple GUI application. 
+             The app allows creating new classes, assigning images to classes, and deleting entries. 
+             Image annotations and class information are saved to a CSV file.
+"""
+
 import os
 import csv
 import pickle
