@@ -65,7 +65,7 @@ def init_models(models_folder: str) -> None:
 
 def prepare_face(face: np.ndarray, target_shape: tuple[int, int]) -> np.ndarray:
     """
-    Prepares the input face for eigenface preprocessing by converting to grayscale, scaling, normalizing, and blurring.
+    Prepares the input face for eigenface preprocessing by converting to grayscale, scaling and normalizing.
 
     Parameters:
     - face (np.ndarray): The input face image.
