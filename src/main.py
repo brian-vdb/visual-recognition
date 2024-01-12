@@ -7,6 +7,8 @@ import argparse
 import os
 import sys
 import time
+import pickle
+
 import numpy as np
 import cv2
 
@@ -28,6 +30,10 @@ best_eigenfaces = None
 mean_face = None
 target_shape = None
 
+# Class Labels
+loaded_class_dictionary = None
+CONFIDENCE_TRESHOLD = 2000
+
 def init_models(models_folder: str) -> None:
     """
     Initializes face detection and recognition models, as well as eigenface preprocessing information.
@@ -38,8 +44,7 @@ def init_models(models_folder: str) -> None:
     Returns:
     None
     """
-    # Call the globals
-    global cascade, recognizer, best_eigenfaces, mean_face, target_shape
+    global cascade, recognizer, best_eigenfaces, mean_face, target_shape, loaded_class_dictionary
 
     # Load in the face detection haar cascade model
     cascade = cv2.CascadeClassifier()
@@ -53,6 +58,10 @@ def init_models(models_folder: str) -> None:
     best_eigenfaces = np.array(np.load(os.path.join(models_folder, 'best_eigenfaces.npy')))
     mean_face = np.array(np.load(os.path.join(models_folder, 'mean_face.npy')))
     target_shape = tuple(np.load(os.path.join(models_folder, 'target_shape.npy')))
+
+    # Load the class dictionary from the pickle file
+    with open(os.path.join(models_folder, 'class_dictionary.pkl'), 'rb') as file:
+        loaded_class_dictionary = pickle.load(file)
 
 def prepare_face(face: np.ndarray, target_shape: tuple[int, int]) -> np.ndarray:
     """
@@ -107,6 +116,8 @@ def detect_and_recognize_faces(image: np.ndarray) -> np.ndarray:
     Returns:
     np.ndarray: The annotated image with recognized faces.
     """
+    global cascade, recognizer, best_eigenfaces, mean_face, target_shape, loaded_class_dictionary
+
     faces = cascade.detectMultiScale(image)
     for (x, y, w, h) in faces:
         eigenfaces_time_start = time.time()
@@ -124,7 +135,7 @@ def detect_and_recognize_faces(image: np.ndarray) -> np.ndarray:
         label, confidence = recognizer.predict(face_projected)
         eigenfaces_time_stop = time.time()
 
-        if confidence < 3000:
+        if confidence < CONFIDENCE_TRESHOLD:
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
 
             # Define the text and font parameters
@@ -134,7 +145,7 @@ def detect_and_recognize_faces(image: np.ndarray) -> np.ndarray:
             font_color = (0, 255, 0)
 
             # Draw the class text
-            text = f'Class: {label}'
+            text = f'Class: {loaded_class_dictionary[label]}'
             cv2.putText(image, text, (x, y - 6), font, font_scale, font_color, font_thickness)
 
             # Draw the confidence text
