@@ -5,6 +5,7 @@ Description: Apply the trained models to a folder of test data using face detect
 
 import argparse
 import os
+import platform
 import sys
 import time
 import pickle
@@ -17,7 +18,8 @@ STD_MODELS_FOLDER = "models"
 STD_MODEL_FILENAMES = ['cascade.xml', 'target_shape.npy', 'mean_face.npy', 'best_eigenfaces.npy' ,'recognizer.yml']
 IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
-# Stream Size
+# Constants for Webcam Stream
+STREAM_CAM_ID = 0
 STREAM_WIDTH = 1280
 STREAM_HEIGHT = 720
 
@@ -165,19 +167,29 @@ def main_webcam() -> None:
     Returns:
     None
     """
-    # Initialize the webcam stream
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    # Check the operating system
+    if platform.system() == 'Linux':
+        # For Linux
+        cam = cv2.VideoCapture(STREAM_CAM_ID)
+    elif platform.system() == 'Windows':
+        # For Windows, add the DSHOW property
+        cam = cv2.VideoCapture(STREAM_CAM_ID, cv2.CAP_DSHOW)
+    else:
+        # Handle other operating systems if needed
+        print("Error: Unsupported operating system not supported in streaming module")
 
     # Set the stream properties
-    codec = 0x47504A4D  # MJPG
-    cap.set(cv2.CAP_PROP_FOURCC, codec)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, STREAM_WIDTH)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, STREAM_HEIGHT)
-    cap.set(cv2.CAP_PROP_FPS, 60)
+    cam.set(cv2.CAP_PROP_FRAME_WIDTH, STREAM_WIDTH)
+    cam.set(cv2.CAP_PROP_FRAME_HEIGHT, STREAM_HEIGHT)
+    cam.set(cv2.CAP_PROP_FPS, 60)
+
+    # Make sure that the camera device is opened
+    if not cam.isOpened():
+        print(f'Error: Could not open camera with the ID {STREAM_CAM_ID}. Please try a different camera.')
 
     while True:
         # Fetch a frame
-        ret, frame = cap.read()
+        ret, frame = cam.read()
         if ret:
             # Apply the image detection and recognition models
             frame = detect_and_recognize_faces(frame)

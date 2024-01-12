@@ -1,6 +1,6 @@
 """
 Author: Brian van den Berg
-Description: This script applies a pre-trained YuNet model to detect faces in images or from a webcam stream, facilitating almost automatic annotation work.
+Description: This script uses a pre-trained Cascade model to detect faces in images or from a webcam stream, aiding in almost automatic annotation work.
 """
 
 import argparse
@@ -11,26 +11,45 @@ import numpy as np
 import cv2
 import copy
 
-# Standard Input Constants
+# Constants for Standard Input
 STD_MODELS_FOLDER = "models"
-STD_MODEL_FILENAMES = ['yunet.onnx']
+STD_MODEL_FILENAMES = ['cascade.xml']
 STD_OUTPUT_FOLDER = "output"
 IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
-# Yunet Input Size
-YUNET_SIZE = 720
+# Input Size for Cascade Model
+CASCADE_SIZE = 720
 
-# Stream Constants
+# Constants for Webcam Stream
 STREAM_CAM_ID = 0
 STREAM_WIDTH = 1280
 STREAM_HEIGHT = 720
 
+# Global variables for the trained models
+cascade = None
+
 # Counter for annotations
 annotation_i = 0
 
+def init_models(models_folder: str) -> None:
+    """
+    Initialize face detection model.
+
+    Parameters:
+    - models_folder (str): The folder containing the pre-trained models.
+
+    Returns:
+    None
+    """
+    global cascade
+
+    # Load the Cascade model
+    cascade = cv2.CascadeClassifier()
+    cascade.load(os.path.join(models_folder, 'cascade.xml'))
+
 def squarify_image(image: np.ndarray) -> np.ndarray:
     """
-    Adjusts the image to form a square by cropping the longer axis.
+    Adjusts the image to a square by cropping the longer axis.
 
     Parameters:
     - image (np.ndarray): The input image.
@@ -63,7 +82,7 @@ def squarify_box(box: list[int]) -> list[int]:
     Returns:
     list[int]: The adjusted bounding box coordinates to form a square or None if the adjustment is not valid.
     """
-    global YUNET_SIZE
+    global CASCADE_SIZE
 
     # Turn the detected face into a square
     new_width = box[3]
@@ -71,7 +90,7 @@ def squarify_box(box: list[int]) -> list[int]:
     new_x = box[0] - round(width_difference / 2)
             
     # Apply the changed box if valid
-    if new_x > 0 and new_x + new_width < YUNET_SIZE:
+    if new_x > 0 and new_x + new_width < CASCADE_SIZE:
         box[0] = new_x
         box[2] = new_width
         return box
@@ -148,12 +167,11 @@ def save_image_and_annotation(image: np.ndarray, path: str, annotation_file_path
     with open(annotation_file_path, "a") as file:
         file.write(f'{annotation}\n')
 
-def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output_folder: str) -> int:
+def detect_and_handle_faces(image: np.ndarray, output_folder: str) -> int:
     """
-    Detects faces in an image using YuNet, displays options, and handles user input.
+    Detects faces using Cascade model, displays options, and handles user input.
 
     Parameters:
-    - yunet (cv2.FaceDetectorYN): The face detector.
     - image (np.ndarray): The input image.
     - output_folder (str): The folder to save annotated frames.
 
@@ -161,14 +179,14 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
     int: The number of faces detected and annotated. Returns 0 if the user chooses to discard annotations,
          -1 if the user chooses to quit the application.
     """
-    global YUNET_SIZE
-    global annotation_i
+    global CASCADE_SIZE
+    global annotation_i, cascade
 
     # Make the aspect ratio square
     image = squarify_image(image)
     
-    # Rescale the image to be usable by the YuNet model
-    scale_factor = YUNET_SIZE / len(image)
+    # Rescale the image to be usable by the Cascade model
+    scale_factor = CASCADE_SIZE / len(image)
     image = cv2.resize(image, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_AREA)
 
     # Start an annotation
@@ -177,28 +195,27 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
     boxes = []
     annotation_i += 1
 
-    # Perform detection on the frame with YuNet
+    # Perform detection on the frame with Cascade model
     display_image = copy.deepcopy(image)
-    _, faces = yunet.detect(display_image)
-    # Draw rectangles
-    if faces is not None:
-        # Handle every face
-        for face in faces:
-            box = list(map(int, face[:4]))
+    faces = cascade.detectMultiScale(display_image)
 
-            # Turn the box into a square
-            box = squarify_box(box)
-            if box is None:
-                continue
+    for face in faces:
+        box = list(map(int, face[:4]))
 
-            # Append the box to the boxes array
-            boxes.append(box)
+        # Turn the box into a square
+        box = squarify_box(box)
+        if box is None:
+            continue
 
-            # Draw a box around the face
-            display_image = draw_box(display_image, box)
+        # Append the box to the boxes array
+        boxes.append(box)
 
-        # Save the actual number of faces
-        no_faces = len(boxes)
+        # Draw a box around the face
+        display_image = draw_box(display_image, box)
+        break
+
+    # Save the actual number of faces
+    no_faces = len(boxes)
 
     # Draw the options on the frame
     display_image = draw_options(display_image)
@@ -215,7 +232,7 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
 
     # Handle the user's choice
     if key == ord('a'):
-        print(f'User ACCEPTED: "{path}"')
+        print(f'Info: User ACCEPTED: "{path}"')
 
         # Formulate the annotation
         annotation = f'{path} {no_faces}'
@@ -227,18 +244,17 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
 
         return no_faces
     elif key == ord('r'):
-        print(f'User REJECTED: "{path}"')
+        print(f'Info: User REJECTED: "{path}"')
         return 0
     elif key == ord('q'):
-        print(f'User QUIT')
+        print(f'Info: User QUIT')
         return -1
 
-def main_webcam(yunet: cv2.FaceDetectorYN, output_folder: str) -> None:
+def main_webcam(output_folder: str) -> None:
     """
     Processes frames from the webcam stream, detects and handles faces, and prints the number of annotated faces.
 
     Parameters:
-    - yunet (cv2.FaceDetectorYN): The face detector.
     - output_folder (str): The folder to save the annotated frames.
 
     Returns:
@@ -271,24 +287,23 @@ def main_webcam(yunet: cv2.FaceDetectorYN, output_folder: str) -> None:
         ret, frame = cam.read()
         if ret:
             # Perform the annotation on the current frame
-            ret = detect_and_handle_faces(yunet, frame, output_folder)
+            ret = detect_and_handle_faces(frame, output_folder)
             if ret < 0:
                 cv2.destroyAllWindows()
                 sys.exit(0)
             
             # Print the number of annotated faces
-            print(f'Number of faces annotated: {ret}')
+            print(f'Info: Number of faces annotated: {ret}')
         
         # Flush the capture device
         for _ in range(3):
             cam.read()
 
-def main_images(yunet: cv2.FaceDetectorYN, input_folder: str, output_folder: str) -> None:
+def main_images(input_folder: str, output_folder: str) -> None:
     """
     Processes images from the input folder, detects and handles faces, and saves annotated frames to the output folder.
 
     Parameters:
-    - yunet (cv2.FaceDetectorYN): The face detector.
     - input_folder (str): The folder containing input images.
     - output_folder (str): The folder to save annotated frames.
 
@@ -300,10 +315,14 @@ def main_images(yunet: cv2.FaceDetectorYN, input_folder: str, output_folder: str
     # List all the images in the input folder with the accepted extensions
     image_paths = [os.path.join(input_folder, f) for f in os.listdir(input_folder) if f.lower().endswith(tuple(IMAGE_EXTENSIONS))]
     for path in image_paths:
+        # perform face detection
         image = cv2.imread(path)
-        ret = detect_and_handle_faces(yunet, image, output_folder)
+        ret = detect_and_handle_faces(image, output_folder)
         if ret < 0:
             break
+
+        # Print the number of annotated faces
+        print(f'Info: Number of faces annotated: {ret}')
     
     # Finished running
     cv2.destroyAllWindows()
@@ -335,13 +354,8 @@ if __name__ == '__main__':
         print(f'Error: The following expected model files were missing: {missing_model_files}')
         sys.exit(1)
 
-    # Initialize the YuNet model
-    yunet_model_path = os.path.join(models_folder, 'yunet.onnx')
-    yunet = cv2.FaceDetectorYN.create(
-        model=yunet_model_path,
-        config="",
-        input_size=(YUNET_SIZE, YUNET_SIZE)
-    )
+    # Initialize the trained models
+    init_models(models_folder)
 
     # Manage the output folder input
     output_folder = args.output
@@ -356,9 +370,9 @@ if __name__ == '__main__':
     # Manage input folder input
     input_folder = args.input
     if input_folder is None:
-        main_webcam(yunet, output_folder)
+        main_webcam(output_folder)
     elif os.path.exists(input_folder):
-        main_images(yunet, input_folder, output_folder)
+        main_images(input_folder, output_folder)
     else:
         print(f'Error: Input folder provided does not exist. Please provide a valid folder.')
         sys.exit(1)
