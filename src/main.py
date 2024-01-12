@@ -84,10 +84,9 @@ def prepare_face(face: np.ndarray, target_shape: tuple[int, int]) -> np.ndarray:
     # Prepare the image for preprocessing
     face_scaled = cv2.resize(face_gray, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_AREA)
     face_normalized = ((face_scaled - face_scaled.min()) / (face_scaled.max() - face_scaled.min())) * 255
-    image_blurred = cv2.GaussianBlur(face_normalized, (3, 3), 0)
 
     # Return the image as an ndarray
-    return image_blurred.astype(np.uint8)
+    return face_normalized.astype(np.uint8)
 
 def apply_eigenfaces(face: np.ndarray, mean: np.ndarray, best_eigenfaces: np.ndarray) -> np.ndarray:
     """
