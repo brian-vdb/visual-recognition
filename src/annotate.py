@@ -1,10 +1,11 @@
 """
 Author: Brian van den Berg
-Description: Apply the pre-trained YuNet model to detect faces in images or from a webcam stream for perfect, almost automatic annotation work.
+Description: This script applies a pre-trained YuNet model to detect faces in images or from a webcam stream, facilitating almost automatic annotation work.
 """
 
 import argparse
 import os
+import platform
 import sys
 import numpy as np
 import cv2
@@ -17,10 +18,10 @@ STD_OUTPUT_FOLDER = "output"
 IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
 # Yunet Input Size
-YUNET_WIDTH = 720
-YUNET_HEIGHT = 720
+YUNET_SIZE = 720
 
-# Stream Size
+# Stream Constants
+STREAM_CAM_ID = 0
 STREAM_WIDTH = 1280
 STREAM_HEIGHT = 720
 
@@ -62,15 +63,15 @@ def squarify_box(box: list[int]) -> list[int]:
     Returns:
     list[int]: The adjusted bounding box coordinates to form a square or None if the adjustment is not valid.
     """
-    global YUNET_WIDTH
+    global YUNET_SIZE
 
     # Turn the detected face into a square
     new_width = box[3]
     width_difference = new_width - box[2]
     new_x = box[0] - round(width_difference / 2)
             
-    # Apply the changed box
-    if new_x > 0 and new_x + new_width < YUNET_WIDTH:
+    # Apply the changed box if valid
+    if new_x > 0 and new_x + new_width < YUNET_SIZE:
         box[0] = new_x
         box[2] = new_width
         return box
@@ -160,13 +161,14 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
     int: The number of faces detected and annotated. Returns 0 if the user chooses to discard annotations,
          -1 if the user chooses to quit the application.
     """
+    global YUNET_SIZE
     global annotation_i
 
     # Make the aspect ratio square
     image = squarify_image(image)
     
     # Rescale the image to be usable by the YuNet model
-    scale_factor = YUNET_HEIGHT / len(image)
+    scale_factor = YUNET_SIZE / len(image)
     image = cv2.resize(image, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_AREA)
 
     # Start an annotation
@@ -186,7 +188,7 @@ def detect_and_handle_faces(yunet: cv2.FaceDetectorYN, image: np.ndarray, output
 
             # Turn the box into a square
             box = squarify_box(box)
-            if box == None:
+            if box is None:
                 continue
 
             # Append the box to the boxes array
@@ -242,21 +244,31 @@ def main_webcam(yunet: cv2.FaceDetectorYN, output_folder: str) -> None:
     Returns:
     None
     """
-    global STREAM_WIDTH, STREAM_HEIGHT
+    global STREAM_CAM_ID, STREAM_WIDTH, STREAM_HEIGHT
 
-    # Initialize the webcam stream
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    # Check the operating system
+    if platform.system() == 'Linux':
+        # For Linux
+        cam = cv2.VideoCapture(STREAM_CAM_ID)
+    elif platform.system() == 'Windows':
+        # For Windows, add the DSHOW property
+        cam = cv2.VideoCapture(STREAM_CAM_ID, cv2.CAP_DSHOW)
+    else:
+        # Handle other operating systems if needed
+        print("Error: Unsupported operating system not supported in streaming module")
 
     # Set the stream properties
-    codec = 0x47504A4D  # MJPG
-    cap.set(cv2.CAP_PROP_FOURCC, codec)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, STREAM_WIDTH)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, STREAM_HEIGHT)
-    cap.set(cv2.CAP_PROP_FPS, 60)
+    cam.set(cv2.CAP_PROP_FRAME_WIDTH, STREAM_WIDTH)
+    cam.set(cv2.CAP_PROP_FRAME_HEIGHT, STREAM_HEIGHT)
+    cam.set(cv2.CAP_PROP_FPS, 60)
+
+    # Make sure that the camera device is opened
+    if not cam.isOpened():
+        print(f'Error: Could not open camera with the ID {STREAM_CAM_ID}. Please try a different camera.')
 
     while True:
         # Fetch a frame
-        ret, frame = cap.read()
+        ret, frame = cam.read()
         if ret:
             # Perform the annotation on the current frame
             ret = detect_and_handle_faces(yunet, frame, output_folder)
@@ -269,7 +281,7 @@ def main_webcam(yunet: cv2.FaceDetectorYN, output_folder: str) -> None:
         
         # Flush the capture device
         for _ in range(3):
-            cap.read()
+            cam.read()
 
 def main_images(yunet: cv2.FaceDetectorYN, input_folder: str, output_folder: str) -> None:
     """
@@ -283,6 +295,8 @@ def main_images(yunet: cv2.FaceDetectorYN, input_folder: str, output_folder: str
     Returns:
     None
     """
+    global IMAGE_EXTENSIONS
+
     # List all the images in the input folder with the accepted extensions
     image_paths = [os.path.join(input_folder, f) for f in os.listdir(input_folder) if f.lower().endswith(tuple(IMAGE_EXTENSIONS))]
     for path in image_paths:
@@ -309,18 +323,15 @@ if __name__ == '__main__':
 
     # Manage models folder input
     models_folder = args.models
-    if models_folder == None and os.path.exists(STD_MODELS_FOLDER):
+    if models_folder is None and os.path.exists(STD_MODELS_FOLDER):
         models_folder = STD_MODELS_FOLDER
     elif not os.path.exists(STD_MODELS_FOLDER):
         print(f'Error: Models folder not provided and {STD_MODELS_FOLDER} does not exist. Please provide a valid folder.')
         sys.exit(1)
 
     # Check if the expected model files exist
-    missing_model_files = []
-    for filename in STD_MODEL_FILENAMES:
-        if not os.path.isfile(os.path.join(models_folder, filename)):
-            missing_model_files.append(filename)
-    if len(missing_model_files) > 0:
+    missing_model_files = [filename for filename in STD_MODEL_FILENAMES if not os.path.isfile(os.path.join(models_folder, filename))]
+    if missing_model_files:
         print(f'Error: The following expected model files were missing: {missing_model_files}')
         sys.exit(1)
 
@@ -329,12 +340,12 @@ if __name__ == '__main__':
     yunet = cv2.FaceDetectorYN.create(
         model=yunet_model_path,
         config="",
-        input_size=(YUNET_WIDTH, YUNET_HEIGHT)
+        input_size=(YUNET_SIZE, YUNET_SIZE)
     )
 
     # Manage the output folder input
     output_folder = args.output
-    if output_folder == None:
+    if output_folder is None:
         output_folder = STD_OUTPUT_FOLDER
     os.makedirs(output_folder, exist_ok=True)
 
@@ -344,7 +355,7 @@ if __name__ == '__main__':
 
     # Manage input folder input
     input_folder = args.input
-    if input_folder == None:
+    if input_folder is None:
         main_webcam(yunet, output_folder)
     elif os.path.exists(input_folder):
         main_images(yunet, input_folder, output_folder)
