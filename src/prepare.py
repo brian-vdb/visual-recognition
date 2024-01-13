@@ -17,6 +17,7 @@ import sys
 import argparse
 import re
 import csv
+import random
 import cv2
 
 from gui.ClassAnnotationApp import run_class_annotation_app
@@ -345,18 +346,23 @@ if __name__ == '__main__':
         with open(annotations_path, "w"):
             pass
         
-        # Save the filenames up to the standard number of negatives for positives
+        # Get the filenames of background images
         image_filenames = [f for f in os.listdir(background_folder) if f.lower().endswith(tuple(IMAGE_EXTENSIONS))]
+        
+        # Randomize the order of the image filenames
+        random.shuffle(image_filenames)
+
+        # Save the perfect number of images
         for i, image_filename in enumerate(image_filenames):
             image_path = os.path.join(background_folder, image_filename)
-            new_image_path = os.path.join(output_folder, image_filename)
             if i == num_positives * 2:
                 print(f'Info: Saved {i} negative samples')
                 break
 
             # Copy the file from source to destination
-            shutil.copy(image_path, new_image_path)
+            new_filename = f'background_images_{i}.jpg'
+            shutil.copy(image_path, os.path.join(output_folder, new_filename))
             
             # Save the image path
             with open(annotations_path, "a") as file:
-                file.write(os.path.join('background', image_filename) + "\n")
+                file.write(os.path.join('background', new_filename) + "\n")
