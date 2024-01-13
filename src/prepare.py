@@ -14,7 +14,6 @@ Options:
 import os
 import sys
 import argparse
-import math
 import re
 import csv
 import cv2
@@ -26,7 +25,11 @@ STD_INPUT_FOLDER = 'input'
 STD_INPUT_FILENAMES = ['info.dat']
 STD_OUTPUT_FOLDER = 'output'
 IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
+
+# Model sizes
 EIGENFACE_BOX_SIZE = 64
+HAAR_BOX_SIZE = 32
+HAAR_MAX_SIZE_ERROR = 0.25
 
 def read_boxes(annotations_path: str) -> list[dict[str, any]]:
     """
@@ -83,6 +86,30 @@ def read_boxes(annotations_path: str) -> list[dict[str, any]]:
     # Return the boxes
     return boxes
 
+def get_size_average(boxes: list[dict[str, any]]) -> int:
+    """
+    Calculate the average size of face boxes in a list of dictionaries.
+
+    Parameters:
+    - boxes (list[dict[str, any]]): A list of dictionaries, each containing:
+        - 'path' (str): The path to the image.
+        - 'box' (list[int]): A list representing the face box [x, y, width, height].
+
+    Returns:
+    - int: An integer representing the average size of the faces
+    """
+    total = 0
+
+    # Calculate the sum of width and height for all faceboxes
+    for box in boxes:
+        total += int(box['box'][2])
+
+    # Calculate the average width and height
+    average = round(total / len(boxes))
+    print(f'Info: Average Size: {average}')
+
+    return average
+
 def create_eigenfaces_csv(output_folder: str, csv_filename: str) -> None:
     """
     Create or overwrite a CSV file with header ['Filename', 'Class'] in the specified folder.
@@ -94,6 +121,8 @@ def create_eigenfaces_csv(output_folder: str, csv_filename: str) -> None:
     Returns:
     - None
     """
+    global IMAGE_EXTENSIONS
+
     # Get a list of filenames in the specified folder
     files = [f for f in os.listdir(output_folder) if f.lower().endswith(tuple(IMAGE_EXTENSIONS))]
     if len(files) == 0:
@@ -114,7 +143,7 @@ def create_eigenfaces_csv(output_folder: str, csv_filename: str) -> None:
         for filename in files:
             csv_writer.writerow([os.path.join(output_folder, filename), ''])
 
-def main_recognition(input_folder: str, output_folder: str) -> None:
+def main_recognition(input_folder: str, output_folder: str) -> int:
     """
     Perform face recognition preprocessing on images in the input folder and save results in the output folder.
 
@@ -123,10 +152,13 @@ def main_recognition(input_folder: str, output_folder: str) -> None:
     - output_folder (str): The path to the folder where recognition results and CSV file will be saved.
 
     Returns:
-    - None
+    - int: An integer representing the average size of a face before scaling
     """
+    global EIGENFACE_BOX_SIZE
+
     # Read the boxes from the annotation file
     boxes = read_boxes(os.path.join(input_folder, 'info.dat'))
+    average_size = get_size_average(boxes)
     
     # Define the feedback variables
     face = None
@@ -154,14 +186,94 @@ def main_recognition(input_folder: str, output_folder: str) -> None:
         # Save the grayscale face
         output_path = os.path.join(output_folder, f"recognition_input_{i}.jpg")
         cv2.imwrite(output_path, face)
+
+    # Log info about the faces
     print(f'Info: Found {no_faces} faces')
-    print(f'Info: Output Shape [h, w]: [{len(face)}, {len(face[0])}]')
+    print(f'Info: Recognition Output Shape [h, w]: [{len(face)}, {len(face[0])}]')
 
     # Create the CSV in which the labels are stored
     csv_name = 'recognition.csv'
     create_eigenfaces_csv(output_folder, csv_name)
     run_class_annotation_app(os.path.join(output_folder, csv_name))
+
+    # Return the average size
+    return average_size
+
+def main_detection(input_folder: str, output_folder: str, average_size: int):
+    global HAAR_BOX_SIZE, HAAR_MAX_SIZE_ERROR
+
+    # Setup the output annotations file
+    output_annotations_path = os.path.join(output_folder, 'info.dat')
+    with open(output_annotations_path, "w"):
+        pass
+
+    # Calculate the scaling factor
+    scaling_factor = HAAR_BOX_SIZE / average_size
+
+    # Open the annotation file
+    sample_counter = 0
+    with open(os.path.join(input_folder, 'info.dat'), 'r') as file:
+        for i, line in enumerate(file):
+            # Split the path into values
+            values = line.strip().split()
+
+            # Check for the end of file
+            if len(values) == 0:
+                break
+
+            # Get the image path and number of faces in the image
+            image_path = values[0]
+            face_index = 1
+            try:
+                num_faces = int(values[face_index])
+            except ValueError:
+                print(f'Line {i}: Warning: Skipping Line; Incorrect Format:')
+                print(f'- Line: "{line.strip()}"')
+                continue
+            
+            # Setup the scaled annotation
+            output_image_path = os.path.join(output_folder, f'detection_input_{i}.jpg')
+            scaled_annotation = f'{output_image_path} {num_faces}'
+
+            # Loop through every face in the picture
+            for _ in range(num_faces):
+                # Get the bounding box
+                x = int(values[face_index + 1])
+                y = int(values[face_index + 2])
+                w = int(values[face_index + 3])
+                h = int(values[face_index + 4])
+
+                # Scale the bounding box
+                new_x = round(x * scaling_factor)
+                new_y = round(y * scaling_factor)
+                new_w = round(w * scaling_factor)
+                new_h = round(h * scaling_factor)
+                
+                # Save the changed bounding box and increment the face index
+                if new_w > HAAR_BOX_SIZE * (1 - HAAR_MAX_SIZE_ERROR) and new_w < HAAR_BOX_SIZE * (1 + HAAR_MAX_SIZE_ERROR):
+                    scaled_annotation = f'{scaled_annotation} {new_x} {new_y} {new_w} {new_h}'
+                    face_index += 4
+                else:
+                    num_faces -= 1
+            
+            # If there are any faces left, save the images and annotations
+            if num_faces > 0:
+                # Scale the image
+                image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+                image_scaled = cv2.resize(image, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
+                cv2.imwrite(output_image_path, image_scaled)
+
+                # Open the file in append mode (creates the file if it doesn't exist)
+                with open(output_annotations_path, "a") as file:
+                    # Append the scaled_annotation to the file
+                    file.write(scaled_annotation + "\n")
+                
+            # increment the sample counter
+            sample_counter += num_faces
     
+    # Log info about the images
+    print(f'Info: Saved {sample_counter} positive samples')
+    print(f'Info: Detection Output Shape [h, w]: [{HAAR_BOX_SIZE}, {HAAR_BOX_SIZE}]')
 
 if __name__ == '__main__':
     # Create argument parser
@@ -195,7 +307,13 @@ if __name__ == '__main__':
     output_folder = args.output
     if output_folder is None:
         output_folder = STD_OUTPUT_FOLDER
-    os.makedirs(output_folder, exist_ok=True)
+    recognition_folder = os.path.join(output_folder, 'recognition')
+    detection_folder = os.path.join(output_folder, 'detection')
 
-    # Prepare the Face Recognition dataset
-    main_recognition(input_folder, output_folder)
+    # Make sure the folders exist
+    os.makedirs(recognition_folder, exist_ok=True)
+    os.makedirs(detection_folder, exist_ok=True)
+
+    # Prepare the Face datasets
+    average_size = main_recognition(input_folder, recognition_folder)
+    main_detection(input_folder, detection_folder, average_size)

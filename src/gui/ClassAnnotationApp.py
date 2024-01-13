@@ -114,7 +114,6 @@ class ClassAnnotationApp:
 
         # Get the directory containing the annotations file
         input_path = os.path.dirname(self.annotations_path)
-        print(input_path)
 
         # Assuming 'class_dictionary.pkl' as the desired filename
         filename = 'class_dictionary.pkl'
