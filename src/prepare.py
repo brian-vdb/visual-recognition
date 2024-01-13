@@ -83,33 +83,6 @@ def read_boxes(annotations_path: str) -> list[dict[str, any]]:
     # Return the boxes
     return boxes
 
-def get_size_average(boxes: list[dict[str, any]]) -> tuple[int, int]:
-    """
-    Calculate the average size of face boxes in a list of dictionaries.
-
-    Parameters:
-    - boxes (list[dict[str, any]]): A list of dictionaries, each containing:
-        - 'path' (str): The path to the image.
-        - 'box' (list[int]): A list representing the face box [x, y, width, height].
-
-    Returns:
-    - tuple[int, int]: A tuple representing the average size [average_width, average_height].
-    """
-    total_width = 0
-    total_height = 0
-
-    # Calculate the sum of width and height for all faceboxes
-    for box in boxes:
-        total_width += int(box['box'][2])
-        total_height += int(box['box'][3])
-
-    # Calculate the average width and height
-    average_width = round(total_width / len(boxes))
-    average_height = round(total_height / len(boxes))
-    print(f'Info: Average Size [h, w]: [{average_height}, {average_width}]')
-
-    return average_width, average_height
-
 def create_eigenfaces_csv(output_folder: str, csv_filename: str) -> None:
     """
     Create or overwrite a CSV file with header ['Filename', 'Class'] in the specified folder.
@@ -154,7 +127,6 @@ def main_recognition(input_folder: str, output_folder: str) -> None:
     """
     # Read the boxes from the annotation file
     boxes = read_boxes(os.path.join(input_folder, 'info.dat'))
-    w_average, h_average = get_size_average(boxes)
     
     # Define the feedback variables
     face = None
