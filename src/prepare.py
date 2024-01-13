@@ -12,6 +12,7 @@ Options:
 """
 
 import os
+import shutil
 import sys
 import argparse
 import re
@@ -200,6 +201,18 @@ def main_recognition(input_folder: str, output_folder: str) -> int:
     return average_size
 
 def main_detection(input_folder: str, output_folder: str, average_size: int):
+    """
+    Process face detection annotations and images, apply scaling to bounding boxes, 
+    and save modified images and annotations.
+
+    Parameters:
+    - input_folder (str): Path to the folder containing input annotation file and images.
+    - output_folder (str): Path to the folder where modified images and annotations will be saved.
+    - average_size (int): Average size used for scaling the bounding boxes.
+
+    Returns:
+    - sample_counter (int): Total number of positive samples saved.
+    """
     global HAAR_BOX_SIZE, HAAR_MAX_SIZE_ERROR
 
     # Setup the output annotations file
@@ -212,6 +225,7 @@ def main_detection(input_folder: str, output_folder: str, average_size: int):
 
     # Open the annotation file
     sample_counter = 0
+    os.makedirs(os.path.join(output_folder, 'images'), exist_ok=True)
     with open(os.path.join(input_folder, 'info.dat'), 'r') as file:
         for i, line in enumerate(file):
             # Split the path into values
@@ -232,7 +246,7 @@ def main_detection(input_folder: str, output_folder: str, average_size: int):
                 continue
             
             # Setup the scaled annotation
-            output_image_path = os.path.join(output_folder, f'detection_input_{i}.jpg')
+            output_image_path = os.path.join('images', f'detection_input_{i}.jpg')
             scaled_annotation = f'{output_image_path} {num_faces}'
 
             # Loop through every face in the picture
@@ -261,9 +275,9 @@ def main_detection(input_folder: str, output_folder: str, average_size: int):
                 # Scale the image
                 image = cv2.imread(image_path, cv2.IMREAD_COLOR)
                 image_scaled = cv2.resize(image, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
-                cv2.imwrite(output_image_path, image_scaled)
+                cv2.imwrite(os.path.join(output_folder, output_image_path), image_scaled)
 
-                # Open the file in append mode (creates the file if it doesn't exist)
+                # Open the file in append mode
                 with open(output_annotations_path, "a") as file:
                     # Append the scaled_annotation to the file
                     file.write(scaled_annotation + "\n")
@@ -274,6 +288,7 @@ def main_detection(input_folder: str, output_folder: str, average_size: int):
     # Log info about the images
     print(f'Info: Saved {sample_counter} positive samples')
     print(f'Info: Detection Output Shape [h, w]: [{HAAR_BOX_SIZE}, {HAAR_BOX_SIZE}]')
+    return sample_counter
 
 if __name__ == '__main__':
     # Create argument parser
@@ -282,6 +297,7 @@ if __name__ == '__main__':
     # Add arguments
     parser.add_argument("--input", type=str, help="Path to the input folder")
     parser.add_argument("--output", type=str, help="Path to the output folder")
+    parser.add_argument("--bg", type=str, help="Path to the background image folder")
 
     # Parse arguments
     args = parser.parse_args()
@@ -316,4 +332,31 @@ if __name__ == '__main__':
 
     # Prepare the Face datasets
     average_size = main_recognition(input_folder, recognition_folder)
-    main_detection(input_folder, detection_folder, average_size)
+    num_positives = main_detection(input_folder, detection_folder, average_size)
+
+    # Manage the background folder input
+    background_folder = args.bg
+    if not background_folder is None:
+        output_folder = os.path.join(detection_folder, 'background')
+        os.makedirs(output_folder, exist_ok=True)
+        annotations_path = os.path.join(detection_folder, 'bg.txt')
+
+        # Clear the background annotations file
+        with open(annotations_path, "w"):
+            pass
+        
+        # Save the filenames up to the standard number of negatives for positives
+        image_filenames = [f for f in os.listdir(background_folder) if f.lower().endswith(tuple(IMAGE_EXTENSIONS))]
+        for i, image_filename in enumerate(image_filenames):
+            image_path = os.path.join(background_folder, image_filename)
+            new_image_path = os.path.join(output_folder, image_filename)
+            if i == num_positives * 2:
+                print(f'Info: Saved {i} negative samples')
+                break
+
+            # Copy the file from source to destination
+            shutil.copy(image_path, new_image_path)
+            
+            # Save the image path
+            with open(annotations_path, "a") as file:
+                file.write(os.path.join('background', image_filename) + "\n")
