@@ -27,7 +27,7 @@ opencv_createsamples -info info.dat -vec trainingfaces_32-32.vec -bg bg.txt -num
 And then you use this vec file with input images to train the model by calling:
 
 ```bash
-opencv_traincascade -data cascade -vec trainingfaces_32-32.vec -bg bg.txt -numPos 114 -numNeg 228 -numStages 32 -acceptanceRatioBreakValue 10e-5 -w 32 -h 32
+opencv_traincascade -data cascade -vec trainingfaces_32-32.vec -bg bg.txt -numPos {num_positives} -numNeg {num_negatives} -numStages 32 -acceptanceRatioBreakValue 10e-6 -w 32 -h 32
 ```
 
 ## Main
