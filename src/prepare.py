@@ -168,28 +168,15 @@ def main_recognition(input_folder: str, output_folder: str) -> None:
         # Extract face box coordinates
         x, y, w, h = int(box['box'][0]), int(box['box'][1]), int(box['box'][2]), int(box['box'][3])
 
-        # make the ratio equal to the average ratio
-        average_ratio = h_average / w_average
-        h_expected = round(average_ratio * w)
-        y += math.floor((h - h_expected) / 2)
-        h = h_expected
-        if y < 0:
-            continue
-
         # Copy the face from the image
         face = image[y:y + h, x:x + w]
 
         # Convert the cropped face to grayscale
         face_gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
 
-        # Scale the face to the desired size
-        x_scale = w_average / w
-        y_scale = h_average / h
-        face_scaled = cv2.resize(face_gray, None, fx=x_scale, fy=y_scale, interpolation=cv2.INTER_AREA)
-
         # Finally scale the images to a fixed maximum window size
-        scale_factor = EIGENFACE_BOX_SIZE / w_average if w_average > h_average else EIGENFACE_BOX_SIZE / h_average
-        face = cv2.resize(face_scaled, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_AREA)
+        scale_factor = EIGENFACE_BOX_SIZE / w if w > h else EIGENFACE_BOX_SIZE / h
+        face = cv2.resize(face_gray, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_AREA)
         no_faces += 1
 
         # Save the grayscale face
