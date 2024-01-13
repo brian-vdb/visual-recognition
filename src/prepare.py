@@ -331,15 +331,19 @@ if __name__ == '__main__':
     os.makedirs(recognition_folder, exist_ok=True)
     os.makedirs(detection_folder, exist_ok=True)
 
-    # Prepare the Face datasets
+    # Prepare the Face recognition dataset
     average_size = main_recognition(input_folder, recognition_folder)
-    num_positives = main_detection(input_folder, detection_folder, average_size)
 
     # Manage the background folder input
     background_folder = args.bg
     if not background_folder is None:
+        # Prepare the Face detection dataset
+        num_positives = main_detection(input_folder, detection_folder, average_size)
+
+        # Setup background image paths
         output_folder = os.path.join(detection_folder, 'background')
         os.makedirs(output_folder, exist_ok=True)
+        os.makedirs(os.path.join(detection_folder, 'cascade'), exist_ok=True)
         annotations_path = os.path.join(detection_folder, 'bg.txt')
 
         # Clear the background annotations file
