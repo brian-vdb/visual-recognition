@@ -31,7 +31,7 @@ IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 # Model sizes
 EIGENFACE_BOX_SIZE = 64
 HAAR_BOX_SIZE = 32
-HAAR_MAX_SIZE_ERROR = 0.25
+HAAR_MAX_SIZE_ERROR = 9999999999999999999.9
 
 def read_boxes(annotations_path: str) -> list[dict[str, any]]:
     """
