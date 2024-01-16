@@ -34,7 +34,7 @@ target_shape = None
 
 # Class Labels
 loaded_class_dictionary = None
-CONFIDENCE_TRESHOLD = 3000
+CONFIDENCE_TRESHOLD = 4000
 
 def init_models(models_folder: str) -> None:
     """
